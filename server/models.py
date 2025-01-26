@@ -87,3 +87,53 @@ class Depot(db.Model, SerializerMixin):
     inventories = db.relationship('Inventory', backref='depot', lazy='joined')
     transactions = db.relationship('Transaction', backref='depot', lazy='dynamic')
     
+class Transaction(db.Model, SerializerMixin):
+    __tablename__ = "transcations"
+    serialize_rules = ('-depot.transactions', '-fertilizer.transactions',)
+    serialize_only = ('id', 'transcationType', 'quantity', 'unitPrice', 'totalPrice', 'transcationDate', 'depots_id', 'fertilizers_id',)
+    id = db.Column(db.Integer, primary_key=True)
+    transcationType = db.Column(db.String(100), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    unitPrice = db.Column(db.Numeric(10,2), nullable=False)
+    totalPrice = db.Column(db.Numeric(10,2), nullable=False)
+    transcationDate = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    depots_id = db.Column(db.Integer, db.ForeignKey('depots.id'))
+    fertilizers_id = db.Column(db.Integer, db.ForeignKey('fertilizers.id'))
+    
+class Order(db.Model, SerializerMixin):
+    __tablename__ = "orders"
+
+    serialize_rules = ('-payments.order', '-farmer.orders', '-fertilizer.orders',)
+    serialize_only = ('id', 'quantity', 'totalPrice', 'paymentStatus', 'deliveryStatus', 'orderDate', 'farmers_id', 'fertilizers_id', 'payments',)
+    id = db.Column(db.Integer, primary_key=True)
+    quantity = db.Column(db.Integer, nullable=False)
+    totalPrice = db.Column(db.Numeric(10,2), nullable=False)
+    paymentStatus = db.Column(db.String(100), nullable=False)
+    deliveryStatus = db.Column(db.String(100), nullable=False)
+    orderDate = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    farmers_id = db.Column(db.Integer, db.ForeignKey('farmers.id'))
+    fertilizers_id = db.Column(db.Integer, db.ForeignKey('fertilizers.id'))
+    payments = db.relationship('Payment', backref='order') 
+
+class Payment(db.Model, SerializerMixin):
+    __tablename__ = "payments"
+    serialize_only = ('id', 'amountPaid', 'paymentMethod', 'transcationReference', 'paymentDate', 'orders_id',)
+    id = db.Column(db.Integer, primary_key=True)
+    amountPaid = db.Column(db.Numeric(10,2), nullable=False)
+    paymentMethod = db.Column(db.String(100), nullable=False)
+    transcationReference = db.Column(db.String(100), nullable=False)
+    paymentDate = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    orders_id = db.Column(db.Integer, db.ForeignKey('orders.id'))
+
+class Supplier(db.Model, SerializerMixin):
+    __tablename__ = "suppliers"
+    serialize_rules = ('-fertilizers.supplier',)
+    serialize_only = ('id', 'Name', 'phoneNumber', 'email', 'address', 'suppliedFertilizers', 'contractDetails', 'fertilizers',)
+    id = db.Column(db.Integer, primary_key=True)
+    Name = db.Column(db.String(100), nullable=False)
+    phoneNumber = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    address = db.Column(db.String(100), nullable=False)
+    suppliedFertilizers = db.Column(db.String(100), nullable=False)
+    contractDetails = db.Column(db.String(100), nullable=False)
+    fertilizers = db.relationship('Fertilizer', backref='supplier')
