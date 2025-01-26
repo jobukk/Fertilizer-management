@@ -97,6 +97,107 @@ def farmer_login():
         
     return make_response("Please check your credentials", 401)
 
+@app.route("/signup/staff", methods=["POST"])
+def staff_signup():
+    data = request.json
+    firstName = data.get("firstName")
+    lastName = data.get("lastName")
+    password = data.get("password")
+    phoneNumber = data.get("phoneNumber")
+    role = data.get("role")
+    center = data.get("center")
+    department = data.get("department")
+    email = data.get("email")
+
+    if firstName and lastName and email and password:
+        staff = NCPBStaff.query.filter_by(email=email).first()
+        if staff:
+            return make_response({"message": "Please Sign In"}, 200)
+        
+        staff = NCPBStaff(
+            email=email,
+            password=generate_password_hash(password),
+            firstName=firstName,
+            lastName=lastName,
+            phoneNumber=phoneNumber,
+            role=role,
+            center=center,
+            department=department
+        )
+        db.session.add(staff)
+        db.session.commit()
+
+        # Generate a JWT token with the staff's role
+        token = create_access_token(identity={"id": staff.id, "role": role})
+        return jsonify({
+            "message": "Staff created successfully!",
+            "token": token,
+            "role": role
+        }), 201
+    
+    return make_response({"message": "Unable to create staff account"}, 500)
+
+@app.route("/login/staff", methods=["POST"])
+def staff_login():
+    auth = request.json
+    if not auth or not auth.get("email") or not auth.get("password"):
+        return make_response("Proper credentials were not provided", 401)
+    
+    staff = NCPBStaff.query.filter_by(email=auth.get("email")).first()
+    if not staff:
+        return make_response("Please create an account", 401)
+    
+    if check_password_hash(staff.password, auth.get("password")):
+        token = create_access_token(identity={"id": staff.id, "role": staff.role}, fresh=True)
+        print(f"Encoded Token: {token}")
+        return jsonify({"token": token, "role": staff.role}), 201
+    
+    return make_response("Please check your credentials", 401)
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            token = request.headers["Authorization"]
+            print(f"Received Token: {token}")  # Debug print
+
+            # Remove "Bearer " if present
+            if token.startswith("Bearer "):
+                token = token[len("Bearer "):]
+                print(f"Token after removing 'Bearer ': {token}")  # Debug print
+        
+        if not token:
+            return make_response({"message": "Token is missing"}, 401)
+        
+        try:
+            data = jwt.decode(token, "secrets", algorithms=["HS256"])
+            current_user = NCPBStaff.query.filter_by(id=data["id"]).first() or Farmer.query.filter_by(id=data["id"]).first()
+            print(current_user)
+            # if not current_user:
+            #     current_user = NCPBStaff.query.filter_by(id=data["id"]).first()
+            
+            if not current_user:
+                return make_response({"message": "User not found"}, 401)
+            
+            # Explicit role assignment
+            if isinstance(current_user, NCPBStaff):
+                current_user.role = "admin"
+            elif isinstance(current_user, Farmer):
+                current_user.role = "farmer"
+            print(f"Current User: {current_user.email}, Role: {current_user.role}")  # Debug print
+        except jwt.ExpiredSignatureError:
+            return make_response({"message": "Token has expired"}, 401)
+        except jwt.InvalidTokenError as e:
+            return make_response({"message": f"Token is invalid: {str(e)}"}, 401)
+        except Exception as e:
+            return make_response({"message": f"An error occurred: {str(e)}"}, 500)
+        
+        return f(current_user, *args, **kwargs)
+    
+    return decorated
+
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
