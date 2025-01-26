@@ -315,6 +315,74 @@ def fertilizer_by_id(id):
 
         return response
 
+#inventory routes
+@app.route('/inventory', methods=['GET', 'POST'])
+def inventory():
+    if request.method == 'GET':
+        inventories = []
+        for inventory in Inventory.query.all():
+            inventory_dict = inventory.to_dict()
+            inventories.append(inventory_dict)
+        return make_response(jsonify(inventories), 200)
+
+    elif request.method == 'POST':
+        data = request.json
+        if not data:
+            return make_response({"message": "Invalid JSON"}, 400)
+
+    #check required fields
+    required_fields = ["stockQuantity","lastRestockedDate","depots_id","fertilizers_id"]
+    for field in required_fields:
+            if field not in data:
+                return make_response({"message": f"Missing field: {field}"}, 400)
+
+    new_inventory = Inventory(
+        stockQuantity = data.get("stockQuantity"),
+        lastRestockedDate=data.get("lastRestockedDate"),
+        depots_id=data.get("depots_id"),
+        fertilizers_id=data.get("fertilizers_id")
+    )
+    db.session.add(new_inventory)
+    db.session.commit()
+    inventory_dict = new_inventory.to_dict()
+    return make_response(jsonify(inventory_dict), 201)
+
+@app.route('/inventory/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
+def invetory_by_id(id):
+    inventory = Inventory.query.filter_by(id=id).first()
+    if not inventory:
+        return make_response({"message": f"Inventory with id {id} not found"}, 404)
+    if request.method == 'GET':
+        inventory_dict = inventory.to_dict()
+        return make_response(jsonify(inventory_dict), 200)
+
+    elif request.method == 'DELETE':
+        if not inventory:
+            return make_response(jsonify({
+            "message": "data already deleted"
+        }), 200)
+        db.session.delete(inventory)
+        db.session.commit()
+        response_body = {"message": "Item deleted successfully"}
+        return jsonify(response_body), 200
+
+    elif request.method == "PATCH":
+        inventory = Inventory.query.filter_by(id=id).first()
+        if not inventory:
+            return make_response({"message": "Inventory not found"})
+        data = request.form or request.json
+        if not data:
+           return make_response({"message": "No data provided to update"}, 400)
+
+        for attr in data:
+            if hasattr(inventory, attr):
+                setattr(inventory, attr, data.get(attr))
+
+        
+        db.session.commit()
+        inventory_dict = inventory.to_dict()
+        return make_response(jsonify(inventory_dict), 200)
+
 
 
 
