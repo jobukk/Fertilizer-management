@@ -528,6 +528,209 @@ def transaction_by_id(id):
         transaction_dict = transaction.to_dict()
         return make_response(jsonify(transaction_dict), 200)
 
+#order routes
+@app.route('/order', methods=['GET','POST'])
+def order():
+    if request.method == 'GET':
+        orders = []
+        for order in Order.query.all():
+            order_dict = order.to_dict()
+            orders.append(order_dict)
+        return make_response(jsonify(orders), 200)
+
+    elif request.method == 'POST':
+        data = request.json
+        if  not data:
+            return make_response({"message": "Invalid JSON"}, 400)
+        #check required fields
+        required_fields = ["quantity","paymentStatus","deliveryStatus","farmers_id","fertilizers_id"]
+        for field in required_fields:
+            if field not in data:
+                return make_response({"message": f"Missing field: {field}"}, 400)
+        new_order = Order(
+            quantity=data.get("quantity"),
+            totalPrice=data.get("totalPrice"),
+            paymentStatus=data.get("paymentStatus"),
+            deliveryStatus=data.get("deliveryStatus"),
+            orderDate=data.get("orderDate"),
+            farmers_id=data.get("farmers_id"),
+            fertilizers_id=data.get("fertilizers_id")
+        )                 
+        db.session.add(new_order)
+        db.session.commit()
+        order_dict = new_order.to_dict()
+        return make_response(jsonify(order_dict), 201)
+
+@app.route('/order/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
+def order_by_id(id):
+    order = Order.query.filter_by(id=id).first()
+    if request.method == "GET":
+        if order is None:
+            return {"error": "Order with id {id} not found"}, 404
+        order_dict = order.to_dict()
+
+        return make_response(jsonify(order_dict), 200)
+
+    elif request.method == 'DELETE':
+        if not order:
+            return make_response(jsonify({
+            "message": "data already deleted"
+        }), 200)
+        db.session.delete(order)
+        db.session.commit()
+        repsonse_body = {
+            "delete_successful": True,
+            "message": "order deleted"
+        }
+
+        response = make_response(
+            jsonify(repsonse_body),
+            200
+        )
+        return response
+    elif request.method == 'PATCH':
+        if not order: 
+            return make_response({"message":"Order not found"})
+        data = request.form or request.json
+        if not data:
+            return make_response({"message": "No data provided to update"}, 400)    
+        for attr in data:
+            if hasattr(order, attr):
+                setattr(order, attr, data.get(attr))
+
+        db.session.commit()
+        order_dict = order.to_dict()
+        return make_response(jsonify(order_dict), 200)
+
+#payment routes
+@app.route('/payment', methods=['GET','POST'])
+def payment():
+    if request.method == 'GET':
+        payments = []
+        for payment in Payment.query.all():
+            payment_dict = payment.to_dict()
+            payments.append(payment_dict)
+        return make_response(jsonify(payments), 200)
+
+    elif request.method == 'POST':
+        data = request.json
+        if not data:
+            return make_response({"message": "Invalid JSON"}, 400)
+
+        #check required fields
+        required_fields = ["amountPaid","paymentMethod","transcationReference","orders_id"]
+        for field in required_fields:
+            if field not in data:
+                return make_response({"message": f"Missing field: {field}"}, 400)
+        new_payment = Payment(
+            amountPaid=data.get("amountPaid"),
+            paymentMethod=data.get("paymentMethod"),
+            transcationReference=data.get("transcationReference"),
+            orders_id=data.get("orders_id")
+        )
+        db.session.add(new_payment)
+        db.session.commit()
+        payment_dict = new_payment.to_dict()
+        return make_response(jsonify(payment_dict), 201)
+
+@app.route('/payment/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
+def payment_by_id(id):
+    payment = Payment.query.filter_by(id=id).first()
+    if request.method == 'GET':
+        payment_dict = payment.to_dict()
+        return make_response(jsonify(payment_dict), 200)
+
+    elif request.method == 'DELETE':
+        db.session.delete(payment)
+        db.session.commit()
+        repsonse_body = {
+            "delete_successful": True,
+            "message": "payment deleted"
+        }
+
+        response = make_response(
+            jsonify(repsonse_body),
+            200
+        )
+        return response
+
+    elif request.method == 'PATCH':
+        payment = Payment.query.filter_by(id=id).first()
+        if not payment:
+            return make_response({"message":"No data provided to update"}, 400)
+        data = request.form or request.json
+        for attr in data:
+            if hasattr(payment, attr):
+                setattr(payment, attr, data.get(attr))
+       
+        db.session.commit()
+        payment_dict = payment.to_dict()
+        return make_response(jsonify(payment_dict), 200)
+
+#supplier routes
+@app.route('/supplier',methods=['GET', 'POST'])
+def supplier():
+    if request.method == 'GET':
+        suppliers = []
+        for supplier in Supplier.query.all():
+            supplier_dict = supplier.to_dict()
+            suppliers.append(supplier_dict)
+        return make_response(jsonify(suppliers), 200)
+    elif request.method == 'POST':
+        data = request.json
+        if not data:
+            return make_response({"message": "Invalid JSON"}, 400)
+
+    #check required fields
+    required_fields = ["Name","phoneNumber","email","address","suppliedFertilizers","contractDetails"]     
+    for field in required_fields:
+            if field not in data:
+                return make_response({"message": f"Missing field: {field}"}, 400)
+
+    new_supplier =Supplier(
+        Name = data.get("Name"),
+        phoneNumber = data.get("phoneNumber"),
+        email = data.get("email"),
+        address = data.get("address"),
+        suppliedFertilizers = data.get("suppliedFertilizers"),
+        contractDetails = data.get("contractDetails")
+    )
+    db.session.add(new_supplier)
+    db.session.commit()
+    supplier_dict = new_supplier.to_dict()
+    return make_response(jsonify(supplier_dict), 201)
+
+@app.route('/supplier/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
+def supplier_by_id(id):
+    supplier = Supplier.query.filter_by(id=id).first()
+    if not supplier:
+        return make_response({"message": "Supplier not found"}, 404)
+
+    if request.method == 'GET':
+        supplier_dict = supplier.to_dict()
+        return make_response(jsonify(supplier_dict), 200)
+
+    elif request.method == 'DELETE':
+        db.session.delete(supplier)
+        db.session.commit()
+        response_body = {
+            "delete_successful": True,
+            "message": "Supplier deleted"
+        }
+        return make_response(jsonify(response_body), 200)
+
+    elif request.method == 'PATCH':
+        data = request.form or request.json
+        if not data:
+            return make_response({"message": "No data provided to update"}, 400)
+        
+        for attr in data:
+            if hasattr(supplier, attr):
+                setattr(supplier, attr, data.get(attr))
+        
+        db.session.commit()
+        supplier_dict = supplier.to_dict()
+        return make_response(jsonify(supplier_dict), 200)
 
 
 if __name__ == "__main__":
