@@ -383,6 +383,78 @@ def invetory_by_id(id):
         inventory_dict = inventory.to_dict()
         return make_response(jsonify(inventory_dict), 200)
 
+#depot routes
+@app.route('/depot', methods=['GET','POST'])
+def depot():
+    if request.method == 'GET':
+        depots = []
+        for depot in Depot.query.all():
+            depot_dict = depot.to_dict()
+            depots.append(depot_dict)
+        return make_response(jsonify(depots), 200)
+    elif request.method == 'POST':
+        data = request.json
+        if not data:
+            return make_response({"message": "Invalid JSON"}, 400)
+
+        #check required fields
+        required_fields = ["depotName","location","phoneNumber","email","managerName","storageCapacity"]       
+        if not data:
+            return make_response({"message": "Invalid JSON"}, 400)
+
+        new_depot = Depot(
+            depotName=data.get("depotName"),
+            location=data.get("location"),
+            phoneNumber=data.get("phoneNumber"),
+            email=data.get("email"),
+            managerName=data.get("managerName"),
+            storageCapacity=data.get("storageCapacity")
+        )
+        db.session.add(new_depot)
+        db.session.commit()
+        depot_dict = new_depot.to_dict()
+        
+        return make_response(jsonify(depot_dict), 201)
+
+@app.route('/depot/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
+def depot_by_id(id):
+    depot = Depot.query.filter_by(id=id).first()
+    if not depot:
+        return make_response({"message": "Depot with id {id} not found"}, 404)
+    if request.method == 'GET':
+        depot_dict = depot.to_dict()
+        return make_response(jsonify(depot_dict), 200)
+
+    elif request.method == 'DELETE':
+        if not depot:
+            return make_response(jsonify({
+            "message": "data already deleted"
+        }), 200)
+        db.session.delete(depot)
+        db.session.commit()
+        
+        return make_response(jsonify(
+            {
+            "delete_successful": True,
+            "message": "depot deleted"
+        }
+        ), 200)
+
+    elif request.method == 'PATCH':
+        depot = Depot.query.filter_by(id=id).first()
+        if not depot:
+            return make_response({"message":"Depot not found"})
+        data = request.form or request.json
+        if not data:
+           return make_response({"message": "No data provided to update"}, 400) 
+        for attr in data:
+            if hasattr(depot, attr):
+                setattr(depot, attr, data.get(attr))
+
+        db.session.commit()
+        depot_dict = depot.to_dict()
+        return make_response(jsonify(depot_dict), 200)
+
 
 
 
