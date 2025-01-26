@@ -455,6 +455,79 @@ def depot_by_id(id):
         depot_dict = depot.to_dict()
         return make_response(jsonify(depot_dict), 200)
 
+#Transaction route
+@app.route('/transaction', methods=['GET', 'POST'])
+def getAllTransaction():
+    if request.method == 'GET':
+        transactions = []
+        for transaction in Transaction.query.all():
+            transaction_dict = transaction.to_dict()
+            transactions.append(transaction_dict)
+        return make_response(jsonify(transactions), 200)
+
+    elif request.method == 'POST':
+        data = request.json
+        if not data:
+            return make_response({"message": "Invalid JSON"}, 400)
+
+        #check required fields
+        required_fields = ["transcationType","quantity","unitPrice","totalPrice","depots_id","fertilizers_id"]
+        for field in required_fields:
+            if field not in data:
+                return make_response({"message": f"Missing field: {field}"}, 400)
+        new_transaction = Transaction(
+            transcationType = data.get("transcationType"),
+            quantity = data.get("quantity"),
+            unitPrice =data.get("unitPrice"),
+            totalPrice = data.get("totalPrice"),
+            depots_id = data.get("depots_id"),
+            fertilizers_id = data.get("fertilizers_id")
+
+        )
+        db.session.add(new_transaction)
+        db.session.commit()
+        transaction_dict = new_transaction.to_dict()
+        return make_response(jsonify(transaction_dict), 201)
+
+@app.route('/transaction/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
+def transaction_by_id(id):
+    transaction = Transaction.query.filter_by(id=id).first()
+    if not transaction:
+        return make_response({"message": "Transcation with id {id} not found"}, 404)
+    if request.method == 'GET':
+        transaction_dict = transaction.to_dict()
+        return make_response(jsonify(transaction_dict), 200)
+
+    elif  request.method == 'DELETE':
+        transaction = Transaction.query.filter_by(id=id).first()
+        if not transaction:
+            return make_response(jsonify({
+            "message": "data already deleted"
+        }), 200)
+        db.session.delete(transaction)
+        db.session.commit()
+        
+        return make_response(jsonify({
+            "delete_successful": True,
+            "message": "transaction deleted"
+        }), 200)
+
+    elif request.method == 'PATCH':
+        transaction = Transaction.query.filter_by(id=id).first()
+        if not transaction:
+            return make_response({"message":"Transaction not found"})
+        data = request.form or request.json
+        if not data:
+            return make_response({"message": "No data provided to update"}, 400)
+        for attr in data:
+            if hasattr(transaction, attr):
+                setattr(transaction, attr, data.get(attr))        
+        
+        
+        db.session.commit()
+        transaction_dict = transaction.to_dict()
+        return make_response(jsonify(transaction_dict), 200)
+
 
 
 
