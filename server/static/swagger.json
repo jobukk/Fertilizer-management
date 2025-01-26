@@ -1,0 +1,154 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "description": "Code With Prince",
+      "version": "1.0.0",
+      "title": "Code With Prince Flask API Tutorial",
+      "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT"
+      }
+    },
+    "tags": [
+      {
+        "name": "Products API",
+        "description": "Test API"
+      }
+    ],
+    "servers": [
+      {
+        "url": "/"
+      }
+    ],
+    "components": {
+      "schemas": {
+        "FarmerSignup": {
+          "type": "object",
+          "properties": {
+            "firstName": { "type": "string" },
+            "lastName": { "type": "string" },
+            "password": { "type": "string" },
+            "phoneNumber": { "type": "string" },
+            "county": { "type": "string" },
+            "subCounty": { "type": "string" },
+            "farmSize": { "type": "string" },
+            "cropType": { "type": "string" },
+            "email": { "type": "string", "format": "email" }
+          },
+          "required": ["firstName", "lastName", "password", "email"]
+        },
+        "StaffSignup": {
+          "type": "object",
+          "properties": {
+            "firstName": { "type": "string" },
+            "lastName": { "type": "string" },
+            "password": { "type": "string" },
+            "phoneNumber": { "type": "string" },
+            "role": { "type": "string" },
+            "center": { "type": "string" },
+            "department": { "type": "string" },
+            "email": { "type": "string", "format": "email" }
+          },
+          "required": ["firstName", "lastName", "password", "email"]
+        },
+        "Login": {
+          "type": "object",
+          "properties": {
+            "email": { "type": "string", "format": "email" },
+            "password": { "type": "string" }
+          },
+          "required": ["email", "password"]
+        },
+        "Fertilizer": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "Type": { "type": "string" },
+            "NutrientComposition": { "type": "string" },
+            "Manufacturer": { "type": "string" },
+            "ApplicationMethod": { "type": "string" },
+            "ApplicationRate": { "type": "string" },
+            "PackagingSize": { "type": "string" },
+            "Price": { "type": "number" },
+            "ExpirationDate": { "type": "string", "format": "date" },
+            "SafetyInformation": { "type": "string" },
+            "UsageInstructions": { "type": "string" },
+            "StorageConditions": { "type": "string" },
+            "EnvironmentalImpact": { "type": "string" }
+          },
+          "required": ["name", "Type", "NutrientComposition", "Manufacturer", "ApplicationMethod", "ApplicationRate", "PackagingSize", "Price", "ExpirationDate", "SafetyInformation", "UsageInstructions", "StorageConditions", "EnvironmentalImpact"]
+        },
+        "Inventory": {
+          "type": "object",
+          "properties": {
+            "stockQuantity": { "type": "integer" },
+            "lastRestockedDate": { "type": "string", "format": "date" },
+            "depots_id": { "type": "integer" },
+            "fertilizers_id": { "type": "integer" }
+          },
+          "required": ["stockQuantity", "lastRestockedDate", "depots_id", "fertilizers_id"]
+        },
+        "Depot": {
+          "type": "object",
+          "properties": {
+            "depotName": { "type": "string" },
+            "location": { "type": "string" },
+            "phoneNumber": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "managerName": { "type": "string" },
+            "storageCapacity": { "type": "string" }
+          },
+          "required": ["depotName", "location", "phoneNumber", "email", "managerName", "storageCapacity"]
+        },
+        "Transaction": {
+          "type": "object",
+          "properties": {
+            "transcationType": { "type": "string" },
+            "quantity": { "type": "integer" },
+            "unitPrice": { "type": "number" },
+            "totalPrice": { "type": "number" },
+            "depots_id": { "type": "integer" },
+            "fertilizers_id": { "type": "integer" }
+          },
+          "required": ["transcationType", "quantity", "unitPrice", "totalPrice", "depots_id", "fertilizers_id"]
+        },
+        "Order": {
+          "type": "object",
+          "properties": {
+            "quantity": { "type": "integer" },
+            "totalPrice": { "type": "number" },
+            "paymentStatus": { "type": "string" },
+            "deliveryStatus": { "type": "string" },
+            "orderDate": { "type": "string", "format": "date" },
+            "farmers_id": { "type": "integer" },
+            "fertilizers_id": { "type": "integer" }
+          },
+          "required": ["quantity", "paymentStatus", "deliveryStatus", "farmers_id", "fertilizers_id"]
+        },
+        "Payment": {
+          "type": "object",
+          "properties": {
+            "amountPaid": { "type": "number" },
+            "paymentMethod": { "type": "string" },
+            "transcationReference": { "type": "string" },
+            "orders_id": { "type": "integer" }
+          },
+          "required": ["amountPaid", "paymentMethod", "transcationReference", "orders_id"]
+        },
+        "Supplier": {
+          "type": "object",
+          "properties": {
+            "Name": { "type": "string" },
+            "phoneNumber": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "address": { "type": "string" },
+            "suppliedFertilizers": { "type": "string" },
+            "contractDetails": { "type": "string" }
+          },
+          "required": ["Name", "phoneNumber", "email", "address", "suppliedFertilizers", "contractDetails"]
+        }
+      }
+    },
+    "paths":{}
+  }
+  
