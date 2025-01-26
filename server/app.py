@@ -197,6 +197,125 @@ def token_required(f):
     
     return decorated
 
+#fertilizer routes
+@app.route('/fertilizer', methods=['GET', 'POST'])
+# @token_required
+# def manageFertilizer(current_user):
+def manageFertilizer():
+    if request.method == 'GET':
+        fertilizers = []
+        for fertilizer in Fertilizer.query.all():
+            fertilizer_dict = fertilizer.to_dict()
+            fertilizers.append(fertilizer_dict)
+
+        return make_response(jsonify(fertilizers), 200)
+    
+    elif request.method == 'POST':
+        # if current_user.role != 'admin':
+        #     return make_response({"message": "Admin access required"}, 403)
+        
+        data = request.json
+        if not data:
+            return make_response({"message": "Invalid JSON"}, 400)
+        
+        # Check required fields
+        required_fields = ["name", "Type", "NutrientComposition", "Manufacturer", "ApplicationMethod", "ApplicationRate", "PackagingSize", "Price", "ExpirationDate", "SafetyInformation", "UsageInstructions", "StorageConditions", "EnvironmentalImpact"]
+        for field in required_fields:
+            if field not in data:
+                return make_response({"message": f"Missing field: {field}"}, 400)
+        
+        new_fertilizer = Fertilizer(
+            name=data.get("name"),
+            Type=data.get("Type"),
+            NutrientComposition=data.get("NutrientComposition"),
+            Manufacturer=data.get("Manufacturer"),
+            ApplicationMethod=data.get("ApplicationMethod"),
+            ApplicationRate=data.get("ApplicationRate"),
+            PackagingSize=data.get("PackagingSize"),
+            Price=data.get("Price"),
+            ExpirationDate=data.get("ExpirationDate"),
+            SafetyInformation=data.get("SafetyInformation"),
+            UsageInstructions=data.get("UsageInstructions"),
+            StorageConditions=data.get("StorageConditions"),
+            EnvironmentalImpact=data.get("EnvironmentalImpact"),
+        )
+        db.session.add(new_fertilizer)
+        db.session.commit()
+
+        fertilizer_dict = new_fertilizer.to_dict()
+
+        return make_response(jsonify(fertilizer_dict), 201)
+
+@app.route('/fertilizer/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
+def fertilizer_by_id(id):
+    fertilizer = Fertilizer.query.filter_by(id=id).first()
+    if not fertilizer:
+        # Return a 404 error if the fertilizer is not found
+        return make_response(
+            jsonify({"error": f"Fertilizer with id {id} not found"}), 
+            404
+        )
+    if request.method == 'GET':
+        fertilizer_dict = fertilizer.to_dict()
+
+        response = make_response(
+            jsonify(fertilizer_dict),
+            200
+        )
+
+        return response
+
+    elif request.method == 'DELETE':
+        if not fertilizer:
+            return make_response(jsonify({
+            "message": "data already deleted"
+        }), 200)
+        db.session.delete(fertilizer)
+        db.session.commit()
+
+        repsonse_body = {
+            "delete_successful": True,
+            "message": "Fertilizer deleted"
+        }
+
+        response = make_response(
+            jsonify(repsonse_body),
+            200
+        )
+        return response
+
+    elif request.method == 'PATCH':
+        fertilizer = Fertilizer.query.filter_by(id=id).first()
+
+        if not fertilizer:
+            return make_response({"message": "Fertilizer with id {id} not found"}, 404)
+
+        data = request.form or request.json
+        if not data:
+            return make_response({"message": "No data provided to update"}, 400)
+
+        for attr in data:
+            if hasattr(fertilizer, attr):
+                setattr(fertilizer, attr, data.get(attr))
+
+        # print("Before patching")
+        # print(fertilizer)
+
+        db.session.commit()
+
+        fertilizer_dict = fertilizer.to_dict()
+        # print("After patching")
+        # print(fertilizer_dict)
+
+        response = make_response(
+            jsonify(fertilizer_dict),
+            200
+        )
+
+
+        return response
+
+
 
 
 if __name__ == "__main__":
