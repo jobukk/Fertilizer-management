@@ -62,3 +62,28 @@ class Fertilizer(db.Model, SerializerMixin):
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id', name='fk_fertilizers_supplier_id')) 
    
 
+class Inventory(db.Model, SerializerMixin):
+    __tablename__ = "inventories"
+    serialize_only = ('id', 'stockQuantity', 'lastRestockedDate', 'depots_id', 'fertilizers_id',)
+    id = db.Column(db.Integer, primary_key=True)
+    stockQuantity = db.Column(db.Integer, nullable=False)
+    lastRestockedDate = db.Column(db.String(100), nullable=False)
+    depots_id = db.Column(db.Integer, db.ForeignKey('depots.id'))
+    fertilizers_id = db.Column(db.Integer, db.ForeignKey('fertilizers.id'))
+   
+
+class Depot(db.Model, SerializerMixin):
+    __tablename__ = "depots"
+    serialize_rules = ('-NCPBStaffs.depot', '-transactions.depot', '-inventories.depot',)
+    serialize_only = ('id', 'depotName', 'location', 'phoneNumber', 'email', 'managerName', 'storageCapacity',)
+    id  = db.Column(db.Integer, primary_key=True)
+    depotName = db.Column(db.String(150), nullable=False)
+    location = db.Column(db.String(150), nullable=False)
+    phoneNumber = db.Column(db.Integer, nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    managerName = db.Column(db.String(200), nullable=False)
+    storageCapacity = db.Column(db.Integer, nullable=False)
+    depots = db.relationship('NCPBStaff', backref='depot', lazy='joined')
+    inventories = db.relationship('Inventory', backref='depot', lazy='joined')
+    transactions = db.relationship('Transaction', backref='depot', lazy='dynamic')
+    
